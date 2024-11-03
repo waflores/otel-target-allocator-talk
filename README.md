@@ -231,3 +231,150 @@ Sample output:
   }
 }
 ```
+
+
+# Notes
+https://wiki.ravianand.me/
+https://academy.portainer.io/deploy/kubernetes/#/
+https://hub.docker.com/r/portainer/dev-toolkit
+https://docs.portainer.io/start/install-ce/server/docker/linux
+https://www.portainer.io/blog/using-vscode-with-portainer-managed-kubernetes-clusters
+https://yashsrivastav.hashnode.dev/getting-started-with-portainer-using-kind
+https://opentelemetry.io/docs/specs/otel/metrics/
+https://trstringer.com/otel-part1-intro/
+https://github.com/trstringer/otel-shopping-cart
+https://trstringer.com/openetelemetry-sample-application/
+
+https://www.baeldung.com/ops/kubernetes
+https://www.baeldung.com/ops/kubernetes-helm
+https://www.baeldung.com/ops/docker-compose-vs-kubernetes
+https://www.baeldung.com/ops/k3s-getting-started
+https://www.baeldung.com/ops/microk8s-introduction
+https://www.baeldung.com/ops/kubernetes-pod-lifecycle
+https://www.baeldung.com/ops/kubevirt-kubernetes-addon-guide
+https://www.baeldung.com/ops/prometheus-cpu-memory-kubernetes
+https://www.baeldung.com/ops/kubernetes-series
+https://www.baeldung.com/ops/kubectl-ls-alternatives
+https://www.baeldung.com/ops/kubectl-output-format
+https://www.baeldung.com/ops/delete-namespace-terminating-state
+https://www.baeldung.com/ops/kubernetes-pods-scaling
+
+https://www.baeldung.com/ops/docker-guide
+https://www.baeldung.com/ops/podman-execute-docker-container
+https://www.baeldung.com/linux/ssh-check-remote-file-exists
+
+# Example of how to use devcontainers with nix/direnv
+https://github.com/importantimport/hatsu/blob/c4c30551c48c42a173fc1584ac5a3ef228166e4c/.devcontainer/devcontainer.json#L5
+https://github.com/otomadb/devlog/blob/7a4d1395731086b07410f1f3bec78792e1602f12/.devcontainer/.devcontainer.json#L8
+
+
+# Aside for when we create the control plane:
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Alternatively, if you are the root user, you can run:
+
+  export KUBECONFIG=/etc/kubernetes/admin.conf
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+You can now join any number of control-plane nodes by copying certificate authorities
+and service account keys on each node and then running the following as root:
+
+  kubeadm join otel-target-allocator-talk-control-plane:6443 --token <value withheld> \
+        --discovery-token-ca-cert-hash sha256:e83378ed6aa7fbee52ba8bd75b20da6bdad0af0ea301b05a26a53fe6b3b0ef48 \
+        --control-plane 
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join otel-target-allocator-talk-control-plane:6443 --token <value withheld> \
+        --discovery-token-ca-cert-hash sha256:e83378ed6aa7fbee52ba8bd75b20da6bdad0af0ea301b05a26a53fe6b3b0ef48 
+I1102 16:59:18.220030     216 loader.go:395] Config loaded from file:  /etc/kubernetes/admin.conf
+## SNIP
+Set kubectl context to "kind-otel-target-allocator-talk"
+You can now use your cluster with:
+
+kubectl cluster-info --context kind-otel-target-allocator-talk
+# End control plane creation
+
+# We can try to view the pods via k9s like this?
+sudo -E $(which nix) run nixpkgs#k9s -- -A
+# End k9s as root
+https://kubernetes.io/docs/setup/
+  https://kubernetes.io/docs/tasks/tools/
+  https://k0sproject.io/
+  https://www.blueshoe.io/blog/minikube-vs-k3d-vs-kind-vs-getdeck-beiboot/
+  https://github.com/gefyrahq/gefyra
+  https://kubernetes.io/docs/tasks/debug/
+
+# How to stop a pod(s) associated with a namespace
+kubectl --context kind-otel-target-allocator-talk get pods --namespace k8s-metrics  
+NAME                                                       READY   STATUS                       RESTARTS   AGE
+kube-otel-stack-kube-state-metrics-5b84b9cd55-5jfwh        1/1     Running                      0          139m
+kube-otel-stack-metrics-collector-0                        0/1     CreateContainerConfigError   0          62m
+kube-otel-stack-metrics-collector-1                        0/1     CreateContainerConfigError   0          62m
+kube-otel-stack-metrics-collector-2                        0/1     CreateContainerConfigError   0          139m
+kube-otel-stack-metrics-targetallocator-6f8d59c548-mm9rn   1/1     Running                      0          139m
+kube-otel-stack-metrics-targetallocator-6f8d59c548-rdfcj   1/1     Running                      0          139m
+kube-otel-stack-prometheus-node-exporter-hbz85             1/1     Running                      0          139m
+
+# Kill them all in one fell swoop
+kubectl --context kind-otel-target-allocator-talk delete deployment/kube-otel-stack-kube-state-metrics --namespace k8s-metrics
+# Uh... we still have stuff getting rebuilt!
+kubectl --context kind-otel-target-allocator-talk delete pod --all --namespace k8s-metrics
+
+# Ok this actually scaled it down:
+kubectl --context kind-otel-target-allocator-talk scale deployments kube-otel-stack-metrics-targetallocator --replicas=0 --namespace k8s-metrics
+
+# We tried this... let's see
+kubectl --context kind-otel-target-allocator-talk delete deployment.apps/kube-otel-stack-metrics-targetallocator --namespace k8s-metrics
+
+# OK - only deleting the namespace was the most effective way to shutdown all these pods
+kubectl --context kind-otel-target-allocator-talk delete namespace k8s-metrics
+
+kubectl --context kind-otel-target-allocator-talk delete namespace opentelemetry
+
+# Links for interacting with kubectl
+https://www.baeldung.com/ops/kubernetes-stop-pause
+https://www.baeldung.com/ops/kubernetes-switch-namespaces
+https://www.baeldung.com/ops/kubernetes-list-all-resources
+https://www.baeldung.com/ops/kubernetes-pods-scaling
+https://www.baeldung.com/ops/kubernetes-list-every-pod-node
+https://www.baeldung.com/ops/delete-namespace-terminating-state
+
+# List all the stuff in a namespace
+kubectl api-resources --verbs=list --namespaced=true -o name \
+| xargs -n 1 kubectl get --ignore-not-found --show-kind -n k8s-metrics
+
+# Context Prefix: kubectl --context kind-otel-target-allocator-talk 
+
+# More articles:
+https://www.baeldung.com/ops/kubernetes-nodeport-range
+https://www.baeldung.com/ops/kubernetes-restart-container-pod
+https://www.baeldung.com/ops/kubernetes-ingress-empty-address
+https://www.baeldung.com/ops/kubernetes-timeout-issue-port-forwarding
+https://www.baeldung.com/ops/kubernetes-list-recently-deleted-pods
+https://www.baeldung.com/ops/kubernetes-endpoints
+https://www.baeldung.com/ops/k9s-kubernetes-cluster-management
+https://www.baeldung.com/ops/kubernetes-error-no-route-to-host
+https://www.baeldung.com/ops/kubernetes-retrieve-ingress-endpoint-ip-address
+https://www.baeldung.com/ops/kubectl-error-connection-to-server-was-refused
+https://www.baeldung.com/ops/kubernetes-pod-communication
+
+https://uptrace.dev/opentelemetry/python-tracing.html#quickstart
+https://www.cncf.io/blog/2022/04/22/opentelemetry-and-python-a-complete-instrumentation-guide/
+https://intellitect.com/blog/opentelemetry-metrics-python/
+https://github.com/joeriddles/python-otel-demo/
+https://www.cncf.io/blog/2022/07/29/prometheus-vs-opentelemetry-metrics-a-complete-guide/
+https://coralogix.com/docs/opentelemetry/instrumentation-options/python-opentelemetry-instrumentation/#support
+https://www.elastic.co/observability-labs/blog/auto-instrumentation-python-applications-opentelemetry
+https://www.cncf.io/wp-content/uploads/2020/12/Hacking-Monitoring-CNCF-Sarah-Conway.pdf
+
+
+# Let's have a look at these tutorials
+https://opentelemetry-python-kinvolk.readthedocs.io/en/latest/getting-started.html

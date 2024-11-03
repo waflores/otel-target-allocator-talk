@@ -11,7 +11,12 @@ kubectl --context kind-otel-target-allocator-talk apply -f https://github.com/ce
 # Need to wait for cert-manager to finish before installing the operator
 # Sometimes it takes a while for cert-manager pods to come up
 echo "Taking a 90-second nap while the cert-manager pods come up..."
-sleep 90
+secs=90
+while [ $secs -gt 0 ]; do
+    echo -ne "$secs\033[0K\r"
+    sleep 1
+    : $((secs--))
+done
 
 # Install operator
 kubectl --context kind-otel-target-allocator-talk apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/download/v0.102.0/opentelemetry-operator.yaml
