@@ -6,3 +6,4 @@ pyenv.cfg
 *test*
 *secret*
 *scratchpad*
+__pycache__/

@@ -399,3 +399,8 @@ https://opentelemetry.io/docs/languages/python/getting-started/
 https://www.infracloud.io/blogs/opentelemetry-auto-instrumentation-jaeger/
 https://opentelemetry.io/docs/languages/python/exporters/
 https://opentelemetry-python.readthedocs.io/en/stable/exporter/jaeger/jaeger.html#opentelemetry-jaeger-thrift-exporter
+
+# More Demos
+https://opentelemetry.io/docs/demo/
+https://opentelemetry.io/docs/zero-code/python/example/
+https://opentelemetry.io/docs/collector/quick-start/
