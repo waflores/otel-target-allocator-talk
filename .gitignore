@@ -1,4 +1,5 @@
 venv*
+.venv*
 pyenv.cfg
 *example*
 .DS_Store
@@ -6,4 +7,5 @@ pyenv.cfg
 *test*
 *secret*
 *scratchpad*
-__pycache__/
+__pycache__
+.direnv
